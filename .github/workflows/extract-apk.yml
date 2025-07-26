@@ -3,7 +3,7 @@ name: Download and Extract APK
 on:
   workflow_dispatch:
     inputs:
-      apkm_url:
+      apks_url:
         description: 'Direct URL to the .apkm file'
         required: true
         type: string
@@ -16,10 +16,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Install Azul Zulu JDK 17
+        uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
+          distribution: 'zulu'
           java-version: '17'
 
       - name: Download bundletool
@@ -28,14 +28,14 @@ jobs:
 
       - name: Download .apkm file
         run: |
-          mkdir apkm
-          curl -L "${{ github.event.inputs.apkm_url }}" -o apkm/app.apkm
+          mkdir apks
+          curl -L "${{ github.event.inputs.apks_url }}" -o apks/app.apks
 
       - name: Extract universal APK
         run: |
           mkdir output_apks
           java -jar bundletool.jar extract-apks \
-            --apks=apkm/app.apkm \
+            --apks=apks/app.apks \
             --output-dir=output_apks \
             --output-universal-apk
 
