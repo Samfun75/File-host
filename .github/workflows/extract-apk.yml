@@ -1,0 +1,52 @@
+name: Download and Extract APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      apkm_url:
+        description: 'Direct URL to the .apkm file'
+        required: true
+        type: string
+
+jobs:
+  extract-universal-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Download bundletool
+        run: |
+          curl -L -o bundletool.jar https://github.com/google/bundletool/releases/download/1.15.6/bundletool-all-1.15.6.jar
+
+      - name: Download .apkm file
+        run: |
+          mkdir apkm
+          curl -L "${{ github.event.inputs.apkm_url }}" -o apkm/app.apkm
+
+      - name: Extract universal APK
+        run: |
+          mkdir output_apks
+          java -jar bundletool.jar extract-apks \
+            --apks=apkm/app.apkm \
+            --output-dir=output_apks \
+            --output-universal-apk
+
+      - name: Find Universal APK
+        id: find_apk
+        run: |
+          APK=$(find output_apks -name '*.apk' | head -n 1)
+          echo "apk_path=$APK" >> $GITHUB_OUTPUT
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: universal-apk
+          path: ${{ steps.find_apk.outputs.apk_path }}
