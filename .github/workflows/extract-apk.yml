@@ -31,22 +31,21 @@ jobs:
           mkdir apks
           curl -L "${{ github.event.inputs.apks_url }}" -o apks/app.apks
 
-      - name: Extract universal APK
+      - name: Build unsigned universal APK
         run: |
-          mkdir output_apks
-          java -jar bundletool.jar extract-apks \
-            --apks=apks/app.apks \
-            --output-dir=output_apks \
-            --output-universal-apk
+          java -jar bundletool.jar build-apks \
+            --bundle=app/app.aab \
+            --output=output.apks \
+            --mode=universal \
+            --overwrite
 
-      - name: Find Universal APK
-        id: find_apk
+      - name: Extract APK
         run: |
-          APK=$(find output_apks -name '*.apk' | head -n 1)
-          echo "apk_path=$APK" >> $GITHUB_OUTPUT
+          unzip output.apks -d output_apks
+          ls output_apks
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
-        with:
+         with:
           name: universal-apk
-          path: ${{ steps.find_apk.outputs.apk_path }}
+          path: output_apks/universal.apk
